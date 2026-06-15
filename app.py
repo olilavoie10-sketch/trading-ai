@@ -1,4 +1,8 @@
+from flask import Flask, request, jsonify
 import requests
+import os
+
+app = Flask(__name__)
 
 def ask_ai(prompt):
     response = requests.post(
@@ -11,24 +15,27 @@ def ask_ai(prompt):
     )
     return response.json()["response"]
 
-trade = """
-Trade:
-EURUSD long
-Risk: 1.8%
-Result: Win
-User rule: max risk 0.5%
-"""
+@app.route("/")
+def home():
+    return "AI is running"
 
-prompt = f"""
+@app.route("/analyze", methods=["POST"])
+def analyze():
+    data = request.json
+    trade = data["trade"]
+
+    prompt = f"""
 You are a trading risk coach.
 
 Analyze this trade:
 {trade}
 
-Say:
-- if it's GOOD or BAD
-- why
-- how to improve
+Say GOOD or BAD and why.
 """
 
-print(ask_ai(prompt))
+    result = ask_ai(prompt)
+    return jsonify({"result": result})
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
